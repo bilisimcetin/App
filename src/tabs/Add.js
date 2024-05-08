@@ -4,8 +4,10 @@ import React, { useState } from 'react'
 import { colors } from '../screens/globals/style'
 import * as ImagePicker from 'expo-image-picker'
 import storage, {firebase} from '@react-native-firebase/storage'
-
+import { doc, setDoc } from "firebase/firestore";
+import { db } from '../../firebaseconfig';
 import * as FileSystem from 'expo-file-system'
+import { addDoc, collection } from "firebase/firestore";
 
 const Add = () => {
   const [quantity, setQuantity] = useState(1);
@@ -77,16 +79,32 @@ const Add = () => {
 
 };
 
+const uploadItem = async () => {
+  try {
+    const itemCollectionRef = collection(db, "items");
+    const newItemRef = await addDoc(itemCollectionRef, {
+      quantity: quantity,
+      name: name,
+      price: price,
+      discountPrice: discountPrice,
+    });
+    console.log('Item uploaded successfully with ID: ', newItemRef.id);
+  } catch (error) {
+    console.error('Error uploading item: ', error);
+  }
+};
+
+
   
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Admin Item</Text>
       </View>
-      {image && <Image source={{ uri: image }} style={styles.image} />}
-      <TextInput placeholder="Enter Item Name" style={styles.inputStyle} />
-      <TextInput placeholder="Enter Item Price" style={styles.inputStyle} />
-      <TextInput placeholder="Enter Item Discount Price" style={styles.inputStyle} />
+      {image && <Image source={{ uri: image }} style={styles.image}  />}
+      <TextInput placeholder="Enter Item Name" style={styles.inputStyle} value={name} onChangeText={(text) => setName(text)}/>
+      <TextInput placeholder="Enter Item Price" style={styles.inputStyle} value={price.toString()} onChangeText={(text) => setPrice(text)}/>
+      <TextInput placeholder="Enter Item Discount Price" style={styles.inputStyle} value={discountPrice.toString()}  onChangeText={(text) => setDiscountPrice(text)}/>
       <View style={styles.quantityContainer}>
         <Text style={styles.quantityText}>Enter Number:</Text>
         <Picker
@@ -100,7 +118,7 @@ const Add = () => {
       <TouchableOpacity activeOpacity={0.8} style={styles.pickBtn} onPress={pickImage}>
         <Text>Pick Image From Gallery</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.uploadBtn} onPress={uploadMedia}>
+      <TouchableOpacity style={styles.uploadBtn} onPress={uploadItem}>
         <Text>Upload</Text>
       </TouchableOpacity>
     </View>
