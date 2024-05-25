@@ -16,13 +16,13 @@ const OfferSlider = () => {
                 >
 
                     <View style={styles.slide}>
-                        <Image source={require('../../../assets/OfferSliderImages/food1.jpg')} style={styles.image} />
+                        <Image source={require('../../../assets/OfferSliderImages/offer4.png')} style={styles.image} />
                     </View>
                     <View style={styles.slide}>
-                        <Image source={require('../../../assets/OfferSliderImages/food2.jpg')} style={styles.image} />
+                        <Image source={require('../../../assets/OfferSliderImages/offer3.png')} style={styles.image} />
                     </View>
                     <View style={styles.slide}>
-                        <Image source={require('../../../assets/OfferSliderImages/food3.jpg')} style={styles.image} />
+                        <Image source={require('../../../assets/OfferSliderImages/offer6.png')} style={styles.image} />
                     </View>
                 </Swiper>
             </View>
@@ -35,7 +35,7 @@ export default OfferSlider
 const styles = StyleSheet.create({
     offerSlider: {
         width: '100%',
-        height: 200,
+        height: 250,
         backgroundColor: colors.col1,
         paddingHorizontal: 10,
         justifyContent: 'center',
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     },
     slide: {
         width: '100%',
-        height: 200,
+        height: 250,
         backgroundColor: colors.col1,
         justifyContent: 'center',
         alignItems: 'center',

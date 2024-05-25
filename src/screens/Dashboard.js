@@ -32,26 +32,26 @@ const Dashboard = () => {
 
             <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(0)}>
 
-                <Ionicons name="notifications" size={35}  color={ selectedTab == 0? 'tomato' :'black'} />
+                <Ionicons name="notifications" size={35}  color={ selectedTab == 0? '#32127a' :'black'} />
 
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(1)}>
 
-                <AntDesign name="plussquareo" size={35} color={ selectedTab == 1? 'tomato' :'black'} />
+                <AntDesign name="plussquareo" size={35} color={ selectedTab == 1? '#32127a' :'black'} />
 
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(2)}>
 
-                <FontAwesome name="user-circle-o" size={35} color={ selectedTab == 2? 'tomato' :'black'}/>
+                <FontAwesome name="user-circle-o" size={35} color={ selectedTab == 2? '#32127a' :'black'}/>
 
             </TouchableOpacity>
 
 
             <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(3)}>
 
-                <Feather name="box" size={35} color={ selectedTab == 3? 'tomato' :'black'} />
+                <Feather name="box" size={35} color={ selectedTab == 3? '#32127a' :'black'} />
             </TouchableOpacity>
 
         </View>

@@ -2,7 +2,7 @@ module.exports = {
 
     colors:{
         col1:'white',
-        text1:'tomato',
+        text1:'#32127a',
         text2:'grey',
     },
 
@@ -14,7 +14,7 @@ module.exports = {
     btn1:{
         width: '80%',
         height: 50,
-        backgroundColor: 'tomato',
+        backgroundColor: '#32127a',
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',

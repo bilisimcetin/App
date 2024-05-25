@@ -12,6 +12,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from '../../../firebaseconfig';
 import { doc, setDoc } from 'firebase/firestore';
 import firebase from 'firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UserSignup = ({ navigation }) => {
     const [emailfocus, setEmailfocus] = useState(false);
@@ -29,13 +30,25 @@ const UserSignup = ({ navigation }) => {
     const [name, setName] = useState('');
     const [customError, setCustomError] = useState('');
     const [successmsg, setSuccessmsg] = useState(null);
+    const [address, setAddress] = useState('');
+
+    const getCoordinates = async (address) => {
+        const apiKey = 'AIzaSyBu45lcxxeWMAhOjXmPtNS79NNBJTIg04Q';
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+        const data = await response.json();
+        const location = data.results[0].geometry.location;
+        return {
+            latitude: location.lat,
+            longitude: location.lng
+        };
+    };
 
     const handleSignup = () => {
         if (password != cpassword) {
-            setCustomError("Password doesn't match");
+            setCustomError("Şifreler Uyuşmuyor");
             return;
         } else if (phone.length != 10) {
-            setCustomError("Phone number should be 10 digit");
+            setCustomError("Telefon numarası 10 karakter olmalı");
             return;
         }
         try {
@@ -46,16 +59,21 @@ const UserSignup = ({ navigation }) => {
                     if (userCredentials?.user.uid != null) {
                         const user = userCredentials.user;
                         const role = 'user';
+                        const coordinates = await getCoordinates(address);
                         await setDoc(doc(db, "users", user.uid), {
                             email: email,
                             password: password,
                             phone: phone,
                             name: name,
+                            address: address,
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude,
                             role: role,
                             uid: userCredentials?.user?.uid,
+                            cart: [],
                         });
                         console.log('data added to firestore')
-                        setSuccessmsg('user created successfully');
+                        setSuccessmsg('Kullanıcı başarıyla kaydedildi');
                     }
                 })
                 .catch((error) => {
@@ -64,11 +82,11 @@ const UserSignup = ({ navigation }) => {
                 .catch((error) => {
                     console.log('sign up firebase error ', error.message)
                     if (error.message == 'Firebase: The email address is already in use by another account. (auth/email-already-in-use).') {
-                        setCustomError('Email already exists')
+                        setCustomError('Email Zaten Kullanılıyor.')
                     } else if (error.message == 'Firebase: The email address is badly formatted. (auth/invalid-email).') {
-                        setCustomError('Invalid Email')
+                        setCustomError('Geçersiz Mail Formatı')
                     } else if (error.message == 'Firebase: Password should be at least 6 characters (auth/weak-password).') {
-                        setCustomError('Password should be at least 6 characters')
+                        setCustomError('Şifre en az 6 karakter olmalı')
                     } else {
                         setCustomError(error.message)
                     }
@@ -78,15 +96,17 @@ const UserSignup = ({ navigation }) => {
         }
     }
 
+    
+
     return (
         <View style={styles.container}>
             {successmsg == null ?
                 <>
-                    <Text style={styles.head1}>User Sign up</Text>
+                    <Text style={styles.head1}>Kullanıcı Kayıt</Text>
                     {customError !== '' && <Text style={styles.errormsg}>{customError}</Text>}
                     <View style={styles.inputout}>
                         <AntDesign name="user" size={24} color={namefocus === true ? colors.text1 : colors.text2} />
-                        <TextInput style={styles.input} placeholder={'Full Name '}
+                        <TextInput style={styles.input} placeholder={'İsim soyisim '}
                             onFocus={() => {
                                 setEmailfocus(false);
                                 setPasswordfocus(false);
@@ -100,7 +120,7 @@ const UserSignup = ({ navigation }) => {
                     </View>
                     <View style={styles.inputout}>
                         <Entypo name="email" size={24} color={emailfocus === true ? colors.text1 : colors.text2} />
-                        <TextInput style={styles.input} placeholder={'Enter Email '}
+                        <TextInput style={styles.input} placeholder={'Email '}
                             onFocus={() => {
                                 setEmailfocus(true);
                                 setPasswordfocus(false);
@@ -114,7 +134,7 @@ const UserSignup = ({ navigation }) => {
                     </View>
                     <View style={styles.inputout}>
                         <Feather name="smartphone" size={24} color={phonefocus === true ? colors.text1 : colors.text2} />
-                        <TextInput style={styles.input} placeholder={'Phone Number '}
+                        <TextInput style={styles.input} placeholder={'Telefon Numarası '}
                             onFocus={() => {
                                 setEmailfocus(false);
                                 setPhonefocus(true);
@@ -129,7 +149,7 @@ const UserSignup = ({ navigation }) => {
                     <View style={styles.inputout}>
                         <MaterialCommunityIcons name="lock-outline" size={24}
                             color={passwordfocus == true ? colors.text1 : colors.text2} />
-                        <TextInput style={styles.input} placeholder={'Enter Password '}
+                        <TextInput style={styles.input} placeholder={'Şifre '}
                             onFocus={() => {
                                 setEmailfocus(false);
                                 setPasswordfocus(true);
@@ -146,7 +166,7 @@ const UserSignup = ({ navigation }) => {
                     <View style={styles.inputout}>
                         <MaterialCommunityIcons name="lock-outline" size={24}
                             color={cpasswordfocus == true ? colors.text1 : colors.text2} />
-                        <TextInput style={styles.input} placeholder={'Confirm Password '}
+                        <TextInput style={styles.input} placeholder={'Şifreyi Doğrula '}
                             onFocus={() => {
                                 setEmailfocus(false);
                                 setPasswordfocus(true);
@@ -160,23 +180,37 @@ const UserSignup = ({ navigation }) => {
                         />
                         <Octicons name={showcpassword == false ? "eye-closed" : "eye"} size={24} color="black" onPress={() => setShowcpassword(!showcpassword)} />
                     </View>
+
+                    <Text style={styles.address}>Lütfen Adresinizi Giriniz</Text>
+                    <View style={styles.inputout} >
+                        <TextInput style={styles.input1} placeholder="Adresinizi Giriniz" onChangeText={(text) => setAddress(text)}
+                            onPress={() => {
+                                setEmailfocus(false)
+                                setPasswordfocus(false)
+                                setShowpassword(false)
+                                setNamefocus(false)
+                                setPhonefocus(false)
+                                setCustomError('')
+                            }}
+                        />
+                    </View>
                     <TouchableOpacity style={btn1} onPress={() => handleSignup()}>
-                        <Text style={styles.btnText}>Login</Text>
+                        <Text style={styles.btnText}>Kaydol</Text>
                     </TouchableOpacity>
                     <View style={hr90}></View>
                     <Text style={styles.signup} onPress={() => navigation.navigate('userlogin')}>
-                        Already have an account?
-                        <Text style={{ color: colors.text1 }}>Login</Text>
+                        Zaten bir hesabınız var mı?
+                        <Text style={{ color: colors.text1 }}> Giriş</Text>
                     </Text>
                 </>
                 :
                 <View style={styles.container1}>
                     <Text style={styles.successmessage}>{successmsg}</Text>
                     <TouchableOpacity style={btn1} onPress={() => navigation.navigate('userlogin')}>
-                        <Text style={{ color: colors.col1, fontSize: titles.btntxt, fontWeight: "bold" }}>Sign In</Text>
+                        <Text style={{ color: colors.col1, fontSize: titles.btntxt, fontWeight: "bold" }}>Giriş Yap</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={btn1} onPress={() => setSuccessmsg(null)}>
-                        <Text style={{ color: colors.col1, fontSize: titles.btntxt, fontWeight: "bold" }}>Go Back</Text>
+                        <Text style={{ color: colors.col1, fontSize: titles.btntxt, fontWeight: "bold" }}>Geri Dön</Text>
                     </TouchableOpacity>
                 </View>
             }

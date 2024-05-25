@@ -3,55 +3,46 @@ import React, { useState } from 'react'
 import { AntDesign } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import Profil from './Profil';
 import HScreen from './HScreen';
 import Cart from './Cart';
 import { colors } from '../globals/style';
-
-
+import ShowOrder from './ShowOrder';
 
 const Home = () => {
-
-  const [selectedTab, setSelectedTab] = useState(0)
+  const [selectedTab, setSelectedTab] = useState(0);
+  
   return (
     <View style={styles.container}>
-        <View style={styles.header}>
-        <Text style={styles.headerText}>Aşhanı</Text>
+      {selectedTab === 0 ? (
+        <HScreen />
+      ) : selectedTab === 1 ? (
+        <Cart setSelectedTab={setSelectedTab} />
+      ) : selectedTab === 2 ? (
+        <Profil />
+      ) : selectedTab === 3 ? (
+        <ShowOrder/>
+      ) : null}
+
+      <View style={styles.bottomView}>
+        <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(0)}>
+          <AntDesign name="home" size={35} color={selectedTab === 0 ? '#32127a' : 'black'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(1)}>
+          <AntDesign name="shoppingcart" size={35} color={selectedTab === 1 ? '#32127a' : 'black'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(2)}>
+          <FontAwesome name="user-circle-o" size={35} color={selectedTab === 2 ? '#32127a' : 'black'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(3)}>
+          <Feather name="box" size={35}  color={selectedTab === 3 ? '#32127a' : 'black'} />
+        </TouchableOpacity>
       </View>
-        
-        {selectedTab === 0 ? ( 
-          <Cart/>
-        ) : selectedTab === 1 ? (
-          <HScreen/>
-        ) : selectedTab === 2 ? ( 
-          <Profil/>
-        ) : null}
-
-        <View style={styles.bottomView}>
-
-            <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(0)}>
-
-            <AntDesign name="shoppingcart" size={35} color={ selectedTab == 0? 'tomato' :'black'} />
-
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(1)}>
-
-            <AntDesign name="home" size={35} color={ selectedTab == 1? 'tomato' :'black'} />
-
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.bottomTab} onPress={() => setSelectedTab(2)}>
-
-                <FontAwesome name="user-circle-o" size={35} color={ selectedTab == 2? 'tomato' :'black'}/>
-
-            </TouchableOpacity>
-
-        </View>
-      
     </View>
-  )
-}
+  );
+};
+
 
 const styles = StyleSheet.create({
 
@@ -59,28 +50,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  header:{
-    flexDirection:'row',
-    width:'100%',
-    justifyContent:'center',
-    alignItems: 'flex-end', // Başlık konteynerini aşağıya kaydırır
-    padding: 10,
-    padding:10,
-    elevation:20,
-    backgroundColor:colors.col1,
-   
-
-  },
-
-  headerText:{
-    
-    color:colors.text1,
-    fontSize:24,
-  },
-
   bottomView: {
     width: '100%',
-    height: 60,
+    height: 45,
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     alignItems: 'center',
@@ -95,6 +67,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-})
+});
 
-export default Home
+export default Home;

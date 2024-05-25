@@ -3,6 +3,7 @@
     "name": "App",
     "slug": "App",
     "plugins": [
+      
       [
         "expo-image-picker",
         {

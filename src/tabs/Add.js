@@ -1,112 +1,131 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image , SafeAreaView,Alert} from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import React, { useState } from 'react'
-import { colors } from '../screens/globals/style'
-import * as ImagePicker from 'expo-image-picker'
-import storage, {firebase} from '@react-native-firebase/storage'
-import { doc, setDoc } from "firebase/firestore";
-import { db } from '../../firebaseconfig';
-import * as FileSystem from 'expo-file-system'
+import React, { useState } from 'react';
+import { colors } from '../screens/globals/style';
+import * as ImagePicker from 'expo-image-picker';
+import { db, storage, auth } from '../../firebaseconfig';
 import { addDoc, collection } from "firebase/firestore";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 
 const Add = () => {
   const [quantity, setQuantity] = useState(1);
-  const pickerItems = [...Array(100).keys()].map((num) => (
-    <Picker.Item key={num} label={`${num + 0}`} value={num + 0} />
+  const pickerItems = Array.from({ length: 100 }, (_, index) => (
+    <Picker.Item key={index} label={`${index}`} value={index} />
   ));
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState(0)
-  const [discountPrice, setDiscountPrice] = useState(0)
-  
+
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [discountPrice, setDiscountPrice] = useState('');
   const [image, setImage] = useState(null);
-  const[uploading,setUploading] = useState(false);
-  const pickImage = async () =>{
+  const [imageUrl, setImageUrl] = useState('');
 
-     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect:[4,3],
-      quality : 1,
-     })
-    
-     if (!result.canceled){
-      setImage(result.assets[0].uri);
-     }
-
+  const resetForm = () => {
+    setName('');
+    setPrice('');
+    setDiscountPrice('');
+    setQuantity(1);
+    setImage(null);
+    setImageUrl('');
   };
 
-  const uploadMedia = async () =>{
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Fotoğraflarınıza erişim izni gerekiyor!');
+      return;
+    }
 
-
-    setUploading(true);
-  
-
-  try {
-
-    const {uri} = await FileSystem.getInfoAsync(image)
-    const blob= await new Promise((resolve, reject) =>{
-
-      const  xhr = new XMLHttpRequest();
-
-      xhr.onload =() => {
-        resolve(xhr.response);
-
-      };
-      xhr.onerror = (e) =>{
-        reject(new TypeError('Network request failed'));
-        
-        
-      };
-
-      xhr.responseType ='blob';
-      xhr.open('GET',uri,true);
-      xhr.send(null);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
     });
 
-    const filename = image.substring(image.lastIndexOf('/') + 1);
-    const ref = firebase.storage().ref().child(filename);
+    console.log('Seçilen Görüntü Sonucu:', result);
 
-    await ref.put(blob);
-    setUploading(false);
-    Alert.alert('Photo uploaded!');
-    setImage(null);
-  }catch (error){
-    
-    console.error(error);
-    setUploading(false)
-   
-  }
+    if (!result.cancelled) {
+      setImage(result.assets[0].uri);
+      const imageURL = await uploadMedia(result.assets[0].uri);
+      setImageUrl(imageURL);
+    }
+  };
 
-};
+  const uploadMedia = async (uri) => {
+    try {
+      const imageName = uri.substring(uri.lastIndexOf('/') + 1);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `images/${imageName}`);
+      await uploadBytes(storageRef, blob);
 
-const uploadItem = async () => {
-  try {
-    const itemCollectionRef = collection(db, "items");
-    const newItemRef = await addDoc(itemCollectionRef, {
-      quantity: quantity,
-      name: name,
-      price: price,
-      discountPrice: discountPrice,
-    });
-    console.log('Item uploaded successfully with ID: ', newItemRef.id);
-  } catch (error) {
-    console.error('Error uploading item: ', error);
-  }
-};
+      const imageURL = await getDownloadURL(storageRef);
+      return imageURL;
+    } catch (error) {
+      console.error('Resim yüklenirken hata oluştu:', error);
+      return null;
+    }
+  };
 
+  const uploadItem = async () => {
+    try {
+      if (!imageUrl) {
+        throw new Error('Resim yüklenemedi veya URL boş');
+      }
 
-  
+      const adminUid = auth.currentUser.uid;
+
+      const docRef = await addDoc(collection(db, 'items'), {
+        name: name,
+        price: price,
+        discountPrice: discountPrice,
+        quantity: quantity,
+        imageUrl: imageUrl,
+        adminUid: adminUid,
+      });
+
+      console.log('Yeni öğe eklendi:', docRef.id);
+      Alert.alert(
+        'Başarılı',
+        'Ürün başarıyla yüklendi!',
+        [{ text: 'Tamam', onPress: resetForm }]
+      );
+    } catch (error) {
+      console.error('Öğe eklenirken hata oluştu:', error);
+      Alert.alert('Hata', 'Ürün yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Admin Item</Text>
+      <Text style={styles.title}>Ürün Ekle</Text>
+      <View style={styles.divider} />
+      {image && <Image source={{ uri: image }} style={styles.image} />}
+      <View style={styles.inputout}>
+        <TextInput
+          placeholder="Ürün Adını Girin :"
+          style={styles.inputStyle}
+          value={name}
+          onChangeText={(text) => setName(text)}
+          placeholderTextColor="#32127a"
+        />
+        <TextInput
+          placeholder="Ürün Fiyatını Girin :"
+          style={styles.inputStyle}
+          value={price.toString()}
+          onChangeText={(text) => setPrice(text)}
+          placeholderTextColor="#32127a"
+        />
+        <TextInput
+          placeholder="Ürün İndirim Fiyatını Girin :"
+          style={styles.inputStyle}
+          value={discountPrice.toString()}
+          onChangeText={(text) => setDiscountPrice(text)}
+          placeholderTextColor="#32127a"
+        />
       </View>
-      {image && <Image source={{ uri: image }} style={styles.image}  />}
-      <TextInput placeholder="Enter Item Name" style={styles.inputStyle} value={name} onChangeText={(text) => setName(text)}/>
-      <TextInput placeholder="Enter Item Price" style={styles.inputStyle} value={price.toString()} onChangeText={(text) => setPrice(text)}/>
-      <TextInput placeholder="Enter Item Discount Price" style={styles.inputStyle} value={discountPrice.toString()}  onChangeText={(text) => setDiscountPrice(text)}/>
       <View style={styles.quantityContainer}>
-        <Text style={styles.quantityText}>Enter Number:</Text>
+        <Text style={styles.quantityText}>Miktar Girin:</Text>
         <Picker
           selectedValue={quantity}
           onValueChange={(itemValue) => setQuantity(itemValue)}
@@ -116,31 +135,34 @@ const uploadItem = async () => {
         </Picker>
       </View>
       <TouchableOpacity activeOpacity={0.8} style={styles.pickBtn} onPress={pickImage}>
-        <Text>Pick Image From Gallery</Text>
+        <Text style={styles.pickBtnText}>Galeriden Resim Seç</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.uploadBtn} onPress={uploadItem}>
-        <Text>Upload</Text>
+        <Text style={styles.pickBtnText}>Yükle</Text>
       </TouchableOpacity>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    height: 80,
-    width: '120%',
+    paddingTop: 50,
+    paddingHorizontal: 10,
     backgroundColor: '#fff',
-    elevation: 5,
-    paddingLeft: 20,
-    justifyContent: 'center',
   },
-  headerText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text1,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    color: '#333',
+  },
+  divider: {
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   inputStyle: {
     width: '90%',
@@ -151,6 +173,12 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     marginTop: 30,
     alignSelf: 'center',
+    color: '#32127a',
+    elevation: 10,
+    backgroundColor: '#fff',
+  },
+  inputout: {
+    elevation: 20,
   },
   quantityContainer: {
     flexDirection: 'row',
@@ -161,6 +189,8 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     marginRight: 20,
+    color: '#32127a',
+    fontSize: 16,
   },
   picker: {
     width: '40%',
@@ -169,6 +199,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingLeft: 10,
     marginRight: 20,
+    color: '#32127a',
   },
   pickBtn: {
     width: '90%',
@@ -179,10 +210,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    backgroundColor: 'tomato',
+    backgroundColor: '#32127a',
+  },
+  pickBtnText: {
+    color: 'white',
+    fontSize: 18,
   },
   uploadBtn: {
-    backgroundColor: 'tomato',
+    backgroundColor: '#32127a',
     width: '90%',
     height: 50,
     borderRadius: 10,
@@ -190,6 +225,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  uploadBtnText: {
+    color: 'white',
+    fontSize: 18,
   },
   image: {
     width: '90%',

@@ -9,6 +9,14 @@ import LoginEnter from './LoginEnter';
 import UserLogin from './user/UserLogin';
 import UserSignup from './user/UserSignup';
 import Home from './user/Home';
+import EditItem from './EditItem';
+import ProfilEdit from '../tabs/ProfilEdit';
+import Cart from './user/Cart';
+import FeedBack from './user/FeedBack';
+import HScreen from './user/HScreen';
+import ShowOrder from './user/ShowOrder';
+import Items from '../tabs/Items';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -23,9 +31,13 @@ const AuthNavigation = () => {
             <Stack.Screen name="userlogin" component={UserLogin} options={{ headerShown: false }} />
             <Stack.Screen name="usersignup" component={UserSignup}  options={{ headerShown: false }}/>
             <Stack.Screen name="home" component={Home} options={{ headerShown: false }} />
-           
-            
-
+            <Stack.Screen name="edititem" component={EditItem} options={{ headerShown: false }} />
+            <Stack.Screen name="profiledit" component={ProfilEdit} options={{ headerShown: false }} />
+            <Stack.Screen name="cart" component={Cart} options={{ headerShown: false }} />
+            <Stack.Screen name="feedback" component={FeedBack} options={{ headerShown: false }} />
+            <Stack.Screen name="hscreen" component={HScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="showorder" component={ShowOrder} options={{ headerShown: false }} />
+            <Stack.Screen name="item" component={Items} options={{ headerShown: false }} />
         </Stack.Navigator>
     );
 };
